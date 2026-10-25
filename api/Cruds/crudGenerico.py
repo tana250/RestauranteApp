@@ -6,7 +6,7 @@ from sqlalchemy.exc import (
     SQLAlchemyError,
 )
 
-from ..DataBase.database import db_session
+from ..database import db_session
 
 
 def respuesta_error(exc):

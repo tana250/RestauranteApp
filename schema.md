@@ -106,9 +106,26 @@
 
 ---
 
-## Notas de Correcciones
-- **Tipografía corregida:** `provedorId` → `proveedorId`
-- **Nomenclatura unificada:** Se usa `unidadMedidaId` en lugar de `unidadId` en `ingresoMercaderia` y `recetasProductos` para mayor claridad
-- **Tipos de datos especificados:** Se definen tipos precisos (Numeric con decimales, Boolean, Date)
-- **Campos agregados:** Se añaden `fecha` (Date) y `precioUnitario` (Numeric(10,2)) a `ingresoMercaderia`
-- **Nombres de tablas estandarizados:** Se utilizan snake_case para los nombres de tablas (`unidades_medida`, `tipos_insumo`, `ingreso_mercaderia`, `recetas_productos`)
+## mozo
+1.id
+2.nombre
+
+## mesa
+1.id
+2.numero
+
+
+## productoVenta
+1.id
+2.ventaId
+3.productoId
+4.precio
+
+
+## venta
+1.mozoId
+2.mesaId
+3.fecha
+
+
+

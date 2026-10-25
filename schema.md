@@ -105,10 +105,15 @@
 **Tabla:** `producto`
 
 ---
+## personal
+1.id
+2.dni
+3.nombre
+
 
 ## mozo
 1.id
-2.nombre
+2.personalId
 
 ## mesa
 1.id
@@ -120,6 +125,7 @@
 2.ventaId
 3.productoId
 4.precio
+5.egresoMercaderiaId
 
 
 ## venta
@@ -127,5 +133,27 @@
 2.mesaId
 3.fecha
 
+## consumoPersonal
+1.id
+2.personalId
+3.egresoMercaderiaId
+3.fecha
+
+
+## egresoMercaderia
+1.id
+2.ingresoMercaderiaId
+3.cantidad
+
+## metodosPago
+1.id
+2.metodo
+
+## pagos
+1.id
+2.ventaId
+3.metodoPagoId
+4.importe
+5.fecha
 
 

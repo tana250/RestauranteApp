@@ -21,6 +21,7 @@ from .Cruds.receta_producto import register_recetas_productos
 from .Cruds.tipos_insumo import register_tipos_insumo
 from .Cruds.unidades_medida import register_unidades_medida
 from .Cruds.venta import register_venta
+from .Cruds.venta_panel import register_venta_panel
 from .database import init_db
 
 
@@ -62,6 +63,7 @@ def create_app(test_config=None):
     register_mesa(app)
     register_egreso_mercaderia(app)
     register_venta(app)
+    register_venta_panel(app)
     register_producto_venta(app)
     register_consumo_personal(app)
     register_metodos_pago(app)

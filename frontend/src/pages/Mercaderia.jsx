@@ -15,6 +15,19 @@ const fechaLocal = () => {
   return new Date(ahora.getTime() - offset).toISOString().slice(0, 10);
 };
 
+const crearLinea = () => ({
+  key: `${Date.now()}-${Math.random()}`,
+  insumoNombre: "",
+  insumoId: null,
+  cantidad: "",
+  unidadMedidaId: "",
+  precioUnitario: "",
+  tipoInsumoId: "",
+  tipoInsumoNombre: "",
+  marcaId: "",
+  marcaNombre: "",
+});
+
 export default function Mercaderia() {
   const {
     items: proveedores,
@@ -28,11 +41,7 @@ export default function Mercaderia() {
   const [vista, setVista] = useState("ingresos");
   const [proveedorNombre, setProveedorNombre] = useState("");
   const [proveedorId, setProveedorId] = useState(null);
-  const [insumoNombre, setInsumoNombre] = useState("");
-  const [insumoId, setInsumoId] = useState(null);
-  const [cantidad, setCantidad] = useState("");
-  const [unidadMedidaId, setUnidadMedidaId] = useState("");
-  const [precioUnitario, setPrecioUnitario] = useState("");
+  const [lineas, setLineas] = useState([crearLinea()]);
   const [fecha, setFecha] = useState(() => fechaLocal());
   const [guardandoIngreso, setGuardandoIngreso] = useState(false);
 
@@ -55,15 +64,33 @@ export default function Mercaderia() {
     setProveedorId(existente ? existente.id : null);
   };
 
-  const handleInsumoNombre = (e) => {
+  const handleInsumoNombre = (linea, e) => {
     const nuevoNombre = e.target.value;
-    setInsumoNombre(nuevoNombre);
-    setMensaje("");
-
     const existente = insumos.find(
       (insumo) => normalizar(insumo.nombre) === normalizar(nuevoNombre)
     );
-    setInsumoId(existente ? existente.id : null);
+
+    setLineas((actuales) =>
+      actuales.map((item) =>
+        item.key === linea.key
+          ? { ...item, insumoNombre: nuevoNombre, insumoId: existente ? existente.id : null }
+          : item
+      )
+    );
+  };
+
+  const actualizarLinea = (key, campo, valor) => {
+    setLineas((actuales) =>
+      actuales.map((linea) => (linea.key === key ? { ...linea, [campo]: valor } : linea))
+    );
+  };
+
+  const agregarLinea = () => {
+    setLineas((actuales) => [...actuales, crearLinea()]);
+  };
+
+  const eliminarLinea = (key) => {
+    setLineas((actuales) => actuales.filter((linea) => linea.key !== key));
   };
 
   const handleGuardarIngreso = async (e) => {
@@ -76,51 +103,60 @@ export default function Mercaderia() {
       return;
     }
 
-    if (!insumoNombre.trim()) {
-      setError("El insumo es obligatorio");
+    if (lineas.length === 0) {
+      setError("Agregue al menos un insumo");
       return;
     }
 
-    const cantidadNumero = Number(cantidad);
-    if (!Number.isFinite(cantidadNumero) || cantidadNumero <= 0) {
-      setError("Ingrese una cantidad válida");
-      return;
+    for (const linea of lineas) {
+      if (!linea.insumoNombre.trim()) {
+        setError("Cada insumo requiere un nombre");
+        return;
+      }
+
+      const cantidadNumero = Number(linea.cantidad);
+      if (!Number.isFinite(cantidadNumero) || cantidadNumero <= 0) {
+        setError("Ingrese una cantidad válida");
+        return;
+      }
+
+      if (!linea.unidadMedidaId) {
+        setError("Seleccione una unidad de medida");
+        return;
+      }
+
+      const precioNumero = Number(linea.precioUnitario);
+      if (!Number.isFinite(precioNumero) || precioNumero < 0) {
+        setError("Ingrese un precio válido");
+        return;
+      }
     }
 
-    if (!unidadMedidaId) {
-      setError("Seleccione una unidad de medida");
-      return;
-    }
-
-    const precioNumero = Number(precioUnitario);
-    if (!Number.isFinite(precioNumero) || precioNumero < 0) {
-      setError("Ingrese un precio válido");
-      return;
-    }
-
-    const payload = {
+    const ingresos = lineas.map((linea) => ({
       proveedorId: proveedorId || null,
       proveedorNombre: proveedorNombre.trim(),
-      insumoId: insumoId || null,
-      insumoNombre: insumoNombre.trim(),
-      cantidad: cantidadNumero,
-      unidadMedidaId: Number(unidadMedidaId),
-      precioUnitario: precioNumero,
+      insumoId: linea.insumoId || null,
+      insumoNombre: linea.insumoNombre.trim(),
+      cantidad: Number(linea.cantidad),
+      unidadMedidaId: Number(linea.unidadMedidaId),
+      precioUnitario: Number(linea.precioUnitario),
       fecha: fecha || fechaLocal(),
-    };
+      ...(linea.tipoInsumoId ? { tipoInsumoId: Number(linea.tipoInsumoId) } : {}),
+      ...(linea.tipoInsumoNombre ? { tipoInsumoNombre: linea.tipoInsumoNombre } : {}),
+      ...(linea.marcaId ? { marcaId: Number(linea.marcaId) } : {}),
+      ...(linea.marcaNombre ? { marcaNombre: linea.marcaNombre } : {}),
+    }));
 
     setGuardandoIngreso(true);
     try {
-      const { data } = await ingresoMercaderiaPanelService.guardar(payload);
-      setProveedorId(data.proveedorId ?? null);
+      const { data } = await ingresoMercaderiaPanelService.guardar({ ingresos });
+      const creado = Array.isArray(data) ? data[0] : data;
+
       setMensaje(
-        `Ingreso registrado: ${data.insumoNombre} (${data.proveedorNombre}). ` +
+        `Ingreso registrado: ${creado?.insumoNombre ?? ""} (${creado?.proveedorNombre ?? ""}). ` +
           "Si el insumo es nuevo, completá marca y tipo en el apartado Insumos."
       );
-      setInsumoNombre("");
-      setInsumoId(null);
-      setCantidad("");
-      setPrecioUnitario("");
+      setLineas([crearLinea()]);
 
       await Promise.all([recargarInsumos(), recargarProveedores()]);
     } catch (err) {
@@ -233,60 +269,149 @@ export default function Mercaderia() {
             </datalist>
           </p>
 
-          <p>
-            <input
-              list="insumos-existentes-mercaderia"
-              value={insumoNombre}
-              onChange={handleInsumoNombre}
-              placeholder="Insumo"
-              required
-              style={{ width: "100%", maxWidth: "400px" }}
-            />
-            <datalist id="insumos-existentes-mercaderia">
-              {insumos.map((insumo) => (
-                <option key={insumo.id} value={insumo.nombre} />
-              ))}
-            </datalist>
-          </p>
+          {lineas.map((linea) => (
+            <div
+              key={linea.key}
+              style={{ border: "1px solid #ccc", padding: "0.5rem", marginBottom: "0.5rem" }}
+            >
+              <p>
+                <input
+                  list="insumos-existentes-mercaderia"
+                  value={linea.insumoNombre}
+                  onChange={(e) => handleInsumoNombre(linea, e)}
+                  placeholder="Insumo"
+                  required
+                  style={{ width: "100%", maxWidth: "400px" }}
+                />
+                <datalist id="insumos-existentes-mercaderia">
+                  {insumos.map((insumo) => (
+                    <option key={insumo.id} value={insumo.nombre} />
+                  ))}
+                </datalist>
+              </p>
+
+              <p>
+                <label>
+                  Cantidad:{" "}
+                  <input
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    value={linea.cantidad}
+                    onChange={(e) => actualizarLinea(linea.key, "cantidad", e.target.value)}
+                    required
+                  />
+                </label>{" "}
+                <label>
+                  Unidad de medida:{" "}
+                  <select
+                    value={linea.unidadMedidaId}
+                    onChange={(e) => actualizarLinea(linea.key, "unidadMedidaId", e.target.value)}
+                    required
+                  >
+                    <option value="">Seleccione...</option>
+                    {unidades.map((unidad) => (
+                      <option key={unidad.id} value={unidad.id}>
+                        {unidad.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>{" "}
+                <label>
+                  Precio unitario:{" "}
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={linea.precioUnitario}
+                    onChange={(e) => actualizarLinea(linea.key, "precioUnitario", e.target.value)}
+                    required
+                  />
+                </label>
+              </p>
+
+              <p>
+                <label>
+                  Tipo de insumo:{" "}
+                  <select
+                    value={linea.tipoInsumoId}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      if (valor === "__nuevo__") {
+                        actualizarLinea(linea.key, "tipoInsumoId", "");
+                      } else {
+                        actualizarLinea(linea.key, "tipoInsumoId", valor);
+                        if (valor) actualizarLinea(linea.key, "tipoInsumoNombre", "");
+                      }
+                    }}
+                  >
+                    <option value="">Sin tipo</option>
+                    {tiposInsumo.map((tipo) => (
+                      <option key={tipo.id} value={String(tipo.id)}>
+                        {tipo.tipo}
+                      </option>
+                    ))}
+                    <option value="__nuevo__">Crear nuevo...</option>
+                  </select>
+                  {linea.tipoInsumoId === "" && (
+                    <input
+                      value={linea.tipoInsumoNombre}
+                      onChange={(e) => actualizarLinea(linea.key, "tipoInsumoNombre", e.target.value)}
+                      placeholder="Nombre del nuevo tipo"
+                      style={{ marginLeft: "0.5rem" }}
+                    />
+                  )}
+                </label>{" "}
+                <label>
+                  Marca:{" "}
+                  <select
+                    value={linea.marcaId}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      if (valor === "__nuevo__") {
+                        actualizarLinea(linea.key, "marcaId", "");
+                      } else {
+                        actualizarLinea(linea.key, "marcaId", valor);
+                        if (valor) actualizarLinea(linea.key, "marcaNombre", "");
+                      }
+                    }}
+                  >
+                    <option value="">Sin marca</option>
+                    {marcas.map((marca) => (
+                      <option key={marca.id} value={String(marca.id)}>
+                        {marca.nombre}
+                      </option>
+                    ))}
+                    <option value="__nuevo__">Crear nuevo...</option>
+                  </select>
+                  {linea.marcaId === "" && (
+                    <input
+                      value={linea.marcaNombre}
+                      onChange={(e) => actualizarLinea(linea.key, "marcaNombre", e.target.value)}
+                      placeholder="Nombre de la nueva marca"
+                      style={{ marginLeft: "0.5rem" }}
+                    />
+                  )}
+                </label>
+              </p>
+
+              <button
+                type="button"
+                onClick={() => eliminarLinea(linea.key)}
+                disabled={lineas.length === 1}
+              >
+                Quitar insumo
+              </button>
+            </div>
+          ))}
 
           <p>
-            <label>
-              Cantidad:{" "}
-              <input
-                type="number"
-                min="0.001"
-                step="0.001"
-                value={cantidad}
-                onChange={(e) => setCantidad(e.target.value)}
-                required
-              />
-            </label>{" "}
-            <label>
-              Unidad de medida:{" "}
-              <select
-                value={unidadMedidaId}
-                onChange={(e) => setUnidadMedidaId(e.target.value)}
-                required
-              >
-                <option value="">Seleccione...</option>
-                {unidades.map((unidad) => (
-                  <option key={unidad.id} value={unidad.id}>
-                    {unidad.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>{" "}
-            <label>
-              Precio unitario:{" "}
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={precioUnitario}
-                onChange={(e) => setPrecioUnitario(e.target.value)}
-                required
-              />
-            </label>
+            <button type="button" onClick={agregarLinea}>
+              Agregar insumo
+            </button>{" "}
+            <button type="submit" disabled={guardandoIngreso}>
+              {guardandoIngreso ? "Guardando..." : "Registrar ingreso"}
+            </button>
           </p>
 
           <p>
@@ -302,16 +427,10 @@ export default function Mercaderia() {
           </p>
 
           <p>
-            <button type="submit" disabled={guardandoIngreso}>
-              {guardandoIngreso ? "Guardando..." : "Registrar ingreso"}
-            </button>
-          </p>
-
-          <p>
             <small>
-              Si el proveedor o el insumo no existen, se crean automáticamente
-              al enviar. Los insumos nuevos quedan sin marca ni tipo hasta que
-              los completes en el apartado Insumos.
+              Si el proveedor o el insumo no existen, se creen automáticamente
+              al enviar. Los insumos nuevos quedan con la marca y el tipo
+              indicados (se crean si no existen).
             </small>
           </p>
         </form>

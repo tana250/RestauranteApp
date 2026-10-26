@@ -18,7 +18,11 @@ class Mozo(Base):
     ventas: Mapped[List["Venta"]] = relationship(back_populates="mozo", lazy="selectin")
 
     def to_json(self):
-        return {"id": self.id, "personalId": self.personalId}
+        return {
+            "id": self.id,
+            "personalId": self.personalId,
+            "personalNombre": self.personal.nombre if self.personal else None,
+        }
 
     @classmethod
     def from_json(cls, data):

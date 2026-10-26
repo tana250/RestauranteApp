@@ -15,8 +15,6 @@ import MesaNuevo from "../components/Mesa/MesaNuevo";
 import MesaListar from "../components/Mesa/MesaListar";
 import EgresoMercaderiaNuevo from "../components/EgresoMercaderia/EgresoMercaderiaNuevo";
 import EgresoMercaderiaListar from "../components/EgresoMercaderia/EgresoMercaderiaListar";
-import VentaNuevo from "../components/Venta/VentaNuevo";
-import VentaListar from "../components/Venta/VentaListar";
 import ProductoVentaNuevo from "../components/ProductoVenta/ProductoVentaNuevo";
 import ProductoVentaListar from "../components/ProductoVenta/ProductoVentaListar";
 import ConsumoPersonalNuevo from "../components/ConsumoPersonal/ConsumoPersonalNuevo";
@@ -27,6 +25,7 @@ import PagosNuevo from "../components/Pagos/PagosNuevo";
 import PagosListar from "../components/Pagos/PagosListar";
 import Productos from "./Productos";
 import Mercaderia from "./Mercaderia";
+import Ventas from "./Ventas";
 
 const secciones = [
   { key: "proveedor", label: "Proveedor", Nuevo: ProveedorNuevo, Listar: ProveedorListar },
@@ -39,7 +38,7 @@ const secciones = [
   { key: "mozo", label: "Mozo", Nuevo: MozoNuevo, Listar: MozoListar },
   { key: "mesa", label: "Mesa", Nuevo: MesaNuevo, Listar: MesaListar },
   { key: "egresoMercaderia", label: "Egreso de Mercadería", Nuevo: EgresoMercaderiaNuevo, Listar: EgresoMercaderiaListar },
-  { key: "venta", label: "Venta", Nuevo: VentaNuevo, Listar: VentaListar },
+  { key: "ventas", label: "Ventas", Page: Ventas },
   { key: "productoVenta", label: "Producto Venta", Nuevo: ProductoVentaNuevo, Listar: ProductoVentaListar },
   { key: "consumoPersonal", label: "Consumo Personal", Nuevo: ConsumoPersonalNuevo, Listar: ConsumoPersonalListar },
   { key: "metodosPago", label: "Métodos de Pago", Nuevo: MetodosPagoNuevo, Listar: MetodosPagoListar },

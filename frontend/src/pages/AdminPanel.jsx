@@ -7,14 +7,6 @@ import TiposInsumoNuevo from "../components/TiposInsumo/TiposInsumoNuevo";
 import TiposInsumoListar from "../components/TiposInsumo/TiposInsumoListar";
 import MarcasNuevo from "../components/Marcas/MarcasNuevo";
 import MarcasListar from "../components/Marcas/MarcasListar";
-import InsumosNuevo from "../components/Insumos/InsumosNuevo";
-import InsumosListar from "../components/Insumos/InsumosListar";
-import ProductoNuevo from "../components/Producto/ProductoNuevo";
-import ProductoListar from "../components/Producto/ProductoListar";
-import IngresoMercaderiaNuevo from "../components/IngresoMercaderia/IngresoMercaderiaNuevo";
-import IngresoMercaderiaListar from "../components/IngresoMercaderia/IngresoMercaderiaListar";
-import RecetasProductosNuevo from "../components/RecetasProductos/RecetasProductosNuevo";
-import RecetasProductosListar from "../components/RecetasProductos/RecetasProductosListar";
 import PersonalNuevo from "../components/Personal/PersonalNuevo";
 import PersonalListar from "../components/Personal/PersonalListar";
 import MozoNuevo from "../components/Mozo/MozoNuevo";
@@ -33,16 +25,16 @@ import MetodosPagoNuevo from "../components/MetodosPago/MetodosPagoNuevo";
 import MetodosPagoListar from "../components/MetodosPago/MetodosPagoListar";
 import PagosNuevo from "../components/Pagos/PagosNuevo";
 import PagosListar from "../components/Pagos/PagosListar";
+import Productos from "./Productos";
+import Mercaderia from "./Mercaderia";
 
 const secciones = [
   { key: "proveedor", label: "Proveedor", Nuevo: ProveedorNuevo, Listar: ProveedorListar },
   { key: "unidadesMedida", label: "Unidades de Medida", Nuevo: UnidadesMedidaNuevo, Listar: UnidadesMedidaListar },
   { key: "tiposInsumo", label: "Tipos de Insumo", Nuevo: TiposInsumoNuevo, Listar: TiposInsumoListar },
   { key: "marcas", label: "Marcas", Nuevo: MarcasNuevo, Listar: MarcasListar },
-  { key: "insumos", label: "Insumos", Nuevo: InsumosNuevo, Listar: InsumosListar },
-  { key: "producto", label: "Producto", Nuevo: ProductoNuevo, Listar: ProductoListar },
-  { key: "ingresoMercaderia", label: "Ingreso de Mercadería", Nuevo: IngresoMercaderiaNuevo, Listar: IngresoMercaderiaListar },
-  { key: "recetasProductos", label: "Recetas de Productos", Nuevo: RecetasProductosNuevo, Listar: RecetasProductosListar },
+  { key: "mercaderia", label: "Mercadería", Page: Mercaderia },
+  { key: "productos", label: "Productos", Page: Productos },
   { key: "personal", label: "Personal", Nuevo: PersonalNuevo, Listar: PersonalListar },
   { key: "mozo", label: "Mozo", Nuevo: MozoNuevo, Listar: MozoListar },
   { key: "mesa", label: "Mesa", Nuevo: MesaNuevo, Listar: MesaListar },
@@ -76,14 +68,20 @@ export default function AdminPanel() {
       </aside>
       <main style={{ flex: 1, padding: "1rem" }}>
         <h1>{seccion.label}</h1>
-        <section style={{ marginBottom: "2rem" }}>
-          <h2>Nuevo</h2>
-          <seccion.Nuevo />
-        </section>
-        <section>
-          <h2>Listar</h2>
-          <seccion.Listar />
-        </section>
+        {seccion.Page ? (
+          <seccion.Page />
+        ) : (
+          <>
+            <section style={{ marginBottom: "2rem" }}>
+              <h2>Nuevo</h2>
+              <seccion.Nuevo />
+            </section>
+            <section>
+              <h2>Listar</h2>
+              <seccion.Listar />
+            </section>
+          </>
+        )}
       </main>
     </div>
   );

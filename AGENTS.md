@@ -23,6 +23,8 @@
 ## API patterns
 - Routes registered by `register_api(app, model, name, ...)` -> `/{name}/` (GET, POST) and `/{name}/<int:id>` (GET, PATCH, DELETE). Some use camelCase names (e.g. `unidadesMedida`, `ingresoMercaderia`, `recetasProductos`, `productoVenta`, `consumoPersonal`, `metodosPago`).
 - `GroupAPI.get()` supports `?activo=true|false` only if model has `activo`.
+- Product panel: `POST /producto/guardar` (product + `insumos[]` in one transaction; creates missing insumos by name) and `GET /producto/<id>/detalle` (recipe + stock). Stock = ingresos - egresos; kg/g and lt/ml are converted.
+- Mercadería panel: `POST /ingresoMercaderia/guardar` (proveedor/insumo by id or name; creates missing ones + ingreso atomically) and `PATCH /insumos/guardar` (`insumos[]` with `marcaId`/`tipoInsumoId` in one transaction).
 - Errors go through `respuesta_error()` -> JSON with appropriate status codes.
 - CORS enabled in `api.create_app()` via `flask-cors` (allow all origins for dev).
 
@@ -31,11 +33,13 @@
 - Per-entity services in `frontend/src/services/*Service.js` (getAll/getById/create/update/remove)
 - Hooks in `frontend/src/hooks/use*.js` with CRUD helpers; `useProducto` and `usePersonal` expose `toggleActivo(item)`
 - Components: `components/{Entity}/{Entity}Nuevo.jsx`, `components/{Entity}/{Entity}Listar.jsx`. Listar has Editar/Eliminar; entities with `activo` have Activar/Desactivar
-- Admin UI: `frontend/src/pages/AdminPanel.jsx` manages all entities via sidebar
+- Admin UI: `frontend/src/pages/AdminPanel.jsx` manages all entities via sidebar; complex flows live in pages (`Productos.jsx`, `Mercaderia.jsx`)
+- `Productos.jsx` and `Mercaderia.jsx` use datalists to select existing records or type new names (backend resolves/creates by name).
 
 ## Gotchas
 - SQLite needs `instance/` dir (created by `init_db`). FK enforced via PRAGMA on connect.
-- In `api/database.py`, engine/session are lazy; `init_db(app)` configures them and imports `api.Modelos` to register tables.
+- In `api/database.py`, engine/session are lazy; `init_db(app)` configures them and imports `api.Modelos` to register tables. It also rebuilds the SQLite `insumos` table if `tipoInsumoId`/`marcaId` are still NOT NULL (both are nullable now).
+- `POST /producto/guardar` replaces the whole recipe when `insumos` is present; an empty array clears it.
 - When adding models/CRUDs: create in `api/Modelos/`, add to `api/Modelos/__init__.py`, create CRUD in `api/Cruds/`, register in `api/__init__.py`. Add services/hooks/components/pages as needed.
 - Vite proxy exists but frontend uses direct baseURL to Flask in current setup.
 - `schema.md` is the source of truth for schema; update `memory.md` with summaries of schema changes.

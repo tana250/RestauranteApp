@@ -53,10 +53,10 @@
 
 | Campo        | Tipo de Dato | Restricciones                    | Descripción                 |
 | ------------ | ------------ | -------------------------------- | ---------------------------- |
-| id           | Integer      | PK, AutoIncrement, Index         | Identificador único         |
-| nombre       | String(100)  | NOT NULL                         | Nombre del insumo            |
-| tipoInsumoId | Integer      | FK -> tipos_insumo(id), NOT NULL | Referencia al tipo de insumo |
-| marcaId      | Integer      | FK -> marcas(id), NOT NULL       | Referencia a la marca        |
+| id           | Integer      | PK, AutoIncrement, Index    | Identificador único         |
+| nombre       | String(100)  | NOT NULL                    | Nombre del insumo            |
+| tipoInsumoId | Integer      | FK -> tipos_insumo(id), NULL | Referencia al tipo de insumo |
+| marcaId      | Integer      | FK -> marcas(id), NULL      | Referencia a la marca        |
 
 **Tabla:** `insumos`
 
@@ -64,6 +64,10 @@
 
 - `tipoInsumoId` → `tipos_insumo(id)`
 - `marcaId` → `marcas(id)`
+
+> `tipoInsumoId` y `marcaId` pueden ser NULL. El panel de productos crea
+> insumos nuevos sólo con el nombre; esos datos se completan después desde
+> el panel de insumos.
 
 ---
 

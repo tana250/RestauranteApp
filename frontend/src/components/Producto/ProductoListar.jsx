@@ -1,7 +1,17 @@
 import useProducto from "../../hooks/useProducto";
 
-export default function ProductoListar({ onEdit }) {
-  const { items, remove, toggleActivo } = useProducto();
+export default function ProductoListar({
+  onEdit,
+  onSelect,
+  selectedId,
+  items: itemsProp,
+  onRemove,
+  onToggleActivo,
+}) {
+  const producto = useProducto({ autoFetch: itemsProp === undefined });
+  const items = itemsProp ?? producto.items;
+  const remove = onRemove ?? producto.remove;
+  const toggleActivo = onToggleActivo ?? producto.toggleActivo;
 
   return (
     <table>
@@ -16,15 +26,43 @@ export default function ProductoListar({ onEdit }) {
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr key={item.id}>
+          <tr
+            key={item.id}
+            onClick={() => onSelect && onSelect(item)}
+            style={{
+              cursor: onSelect ? "pointer" : "default",
+              background: selectedId === item.id ? "var(--accent-bg)" : undefined,
+            }}
+          >
             <td>{item.id}</td>
             <td>{item.nombre}</td>
             <td>{item.valor}</td>
             <td>{item.activo ? "Si" : "No"}</td>
             <td>
-              <button onClick={() => toggleActivo(item)}>{item.activo ? "Desactivar" : "Activar"}</button>
-              <button onClick={() => onEdit && onEdit(item)}>Editar</button>
-              <button onClick={() => remove(item.id)}>Eliminar</button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleActivo(item);
+                }}
+              >
+                {item.activo ? "Desactivar" : "Activar"}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onEdit) onEdit(item);
+                }}
+              >
+                Editar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  remove(item.id);
+                }}
+              >
+                Eliminar
+              </button>
             </td>
           </tr>
         ))}

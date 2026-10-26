@@ -13,3 +13,13 @@
 - Modelos creados con estilo Mapped/mapped_column + relaciones + to_json/from_json/update_from_json
 - CRUDs creados con register_api (ItemAPI/GroupAPI)
 - api/__init__.py actualizado para registrar todas las nuevas APIs
+- Insumos: `tipoInsumoId` y `marcaId` ahora aceptan NULL para crear insumos desde el panel de productos y completarlos luego.
+- Nuevo `POST /producto/guardar`: guarda producto + receta completa (`insumos[]`) en una transacción; crea insumos nuevos por nombre y hace rollback ante inconsistencias.
+- Nuevo `GET /producto/<id>/detalle`: devuelve la receta con stock disponible por insumo (ingresos menos egresos, con conversión kg/g y lt/ml).
+- `api/database.py` reconstruye la tabla `insumos` en SQLite si fue creada con columnas NOT NULL.
+- `DELETE /producto/<id>` borra primero las filas de `recetas_productos` del producto; no borra insumos ni ventas.
+- Frontend: `pages/Productos.jsx` con alta/edición de producto y receta, y lista con detalle de stock; integrado en `AdminPanel` y reutiliza `ProductoListar`.
+- Nuevo `POST /ingresoMercaderia/guardar`: recibe proveedor/insumo por id o nombre y crea los faltantes + el ingreso en una transacción.
+- Nuevo `PATCH /insumos/guardar`: actualiza `marcaId`/`tipoInsumoId` de varios insumos en un solo JSON y una transacción.
+- `Insumo.to_json()` ahora incluye `marcaNombre` y `tipoInsumoNombre`.
+- Frontend: `pages/Mercaderia.jsx` con ingresos (proveedor/insumo seleccionables o nuevos) y edición masiva de marca/tipo de insumos; reemplaza las secciones Insumos e Ingreso de Mercadería del `AdminPanel`.

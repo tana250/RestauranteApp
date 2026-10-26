@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as service from "../services/productoService";
 
-export default function useProducto() {
+export default function useProducto({ autoFetch = true } = {}) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -38,8 +38,8 @@ export default function useProducto() {
   };
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    if (autoFetch) fetchAll();
+  }, [autoFetch]);
 
   return { items, loading, fetchAll, create, update, toggleActivo, remove };
 }

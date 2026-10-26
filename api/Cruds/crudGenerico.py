@@ -52,8 +52,9 @@ class ItemAPI(MethodView):
 
     init_every_request = False
 
-    def __init__(self, model):
+    def __init__(self, model, on_delete=None):
         self.model = model
+        self.on_delete = on_delete
 
     def _get_item(self, id):
 
@@ -107,6 +108,8 @@ class ItemAPI(MethodView):
             }), 404
 
         try:
+            if self.on_delete:
+                self.on_delete(item)
             db_session.delete(item)
             db_session.commit()
         except (KeyError, ValueError, SQLAlchemyError) as exc:
@@ -190,6 +193,7 @@ def register_api(
     on_create=None,
     load=(),
     item=True,
+    on_delete=None,
 ):
 
     group = GroupAPI.as_view(
@@ -216,6 +220,7 @@ def register_api(
     item_view = ItemAPI.as_view(
         f"{name}-item",
         model,
+        on_delete,
     )
 
     app.add_url_rule(

@@ -1,13 +1,23 @@
 from flask import Flask
+from flask_cors import CORS
 
+from .Cruds.consumo_personal import register_consumo_personal
+from .Cruds.egreso_mercaderia import register_egreso_mercaderia
 from .Cruds.ingreso_mercaderia import register_ingreso_mercaderia
 from .Cruds.insumos import register_insumos
 from .Cruds.marcas import register_marcas
+from .Cruds.mesa import register_mesa
+from .Cruds.metodos_pago import register_metodos_pago
+from .Cruds.mozo import register_mozo
+from .Cruds.pagos import register_pagos
+from .Cruds.personal import register_personal
 from .Cruds.producto import register_producto
+from .Cruds.producto_venta import register_producto_venta
 from .Cruds.proveedor import register_proveedor
 from .Cruds.receta_producto import register_recetas_productos
 from .Cruds.tipos_insumo import register_tipos_insumo
 from .Cruds.unidades_medida import register_unidades_medida
+from .Cruds.venta import register_venta
 from .database import init_db
 
 
@@ -22,6 +32,8 @@ def create_app(test_config=None):
         )
     else:
         app.config.from_mapping(test_config)
+
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
@@ -39,5 +51,14 @@ def create_app(test_config=None):
     register_producto(app)
     register_ingreso_mercaderia(app)
     register_recetas_productos(app)
+    register_personal(app)
+    register_mozo(app)
+    register_mesa(app)
+    register_egreso_mercaderia(app)
+    register_venta(app)
+    register_producto_venta(app)
+    register_consumo_personal(app)
+    register_metodos_pago(app)
+    register_pagos(app)
 
     return app

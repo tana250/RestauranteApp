@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
 
 from flask import jsonify
@@ -46,13 +46,16 @@ def _decimal(valor, campo, positivo=False):
 
 def _fecha(valor):
     if valor in (None, ""):
-        return date.today()
+        return datetime.now()
 
-    if isinstance(valor, date):
+    if isinstance(valor, datetime):
         return valor
 
+    if isinstance(valor, date):
+        return datetime.combine(valor, time.min)
+
     try:
-        return date.fromisoformat(str(valor))
+        return datetime.combine(date.fromisoformat(str(valor)), time.min)
     except ValueError:
         raise ValueError("fecha debe tener formato AAAA-MM-DD")
 
@@ -147,11 +150,48 @@ def _respuesta_venta(venta):
                 "precio": float(producto_venta.precio)
                 if producto_venta.precio is not None
                 else None,
-                "egresoMercaderiaId": producto_venta.egresoMercaderiaId,
+                "cantidad": int(producto_venta.cantidad)
+                if producto_venta.cantidad is not None
+                else None,
             }
             for producto_venta in venta.producto_ventas
         ],
+        "pagos": [
+            pago.to_json() for pago in venta.pagos
+        ],
+        "total": float(
+            sum(
+                (
+                    (producto_venta.precio or Decimal("0"))
+                    * (producto_venta.cantidad or 0)
+                    for producto_venta in venta.producto_ventas
+                ),
+                Decimal("0"),
+            )
+        ),
+        "pagado": float(
+            sum((pago.importe or Decimal("0") for pago in venta.pagos), Decimal("0"))
+        ),
+        "estado": _estado_de(venta),
     }
+
+
+def _estado_de(venta):
+    total = sum(
+        (
+            (producto_venta.precio or Decimal("0"))
+            * (producto_venta.cantidad or 0)
+            for producto_venta in venta.producto_ventas
+        ),
+        Decimal("0"),
+    )
+    pagado = sum((pago.importe or Decimal("0") for pago in venta.pagos), Decimal("0"))
+
+    if pagado >= total:
+        return "completo"
+    if pagado > 0:
+        return "parcial"
+    return "sin_pago"
 
 
 class VentaGuardarAPI(MethodView):
@@ -193,32 +233,33 @@ class VentaGuardarAPI(MethodView):
                 if not recetas:
                     raise ValueError(f"El producto {producto.nombre} no tiene receta")
 
-                receta = recetas[0]
-                insumo = receta.insumo
-                unidad = receta.unidad_medida
-                unidad_nombre = unidad.nombre if unidad is not None else ""
-
-                required = receta.cantidad * cantidad
-                ingreso = _ingreso_disponible(
-                    receta.insumoId,
-                    unidad_nombre,
-                    required,
-                )
-
-                egreso = EgresoMercaderia(
-                    ingresoMercaderiaId=ingreso.id,
-                    cantidad=required,
-                )
-                db_session.add(egreso)
-                db_session.flush()
-
                 producto_venta = ProductoVenta(
                     ventaId=venta.id,
                     productoId=producto.id,
                     precio=precio,
-                    egresoMercaderiaId=egreso.id,
+                    cantidad=int(cantidad),
                 )
                 db_session.add(producto_venta)
+
+                for receta in recetas:
+                    insumo = receta.insumo
+                    unidad = receta.unidad_medida
+                    unidad_nombre = unidad.nombre if unidad is not None else ""
+
+                    required = receta.cantidad * cantidad
+                    ingreso = _ingreso_disponible(
+                        receta.insumoId,
+                        unidad_nombre,
+                        required,
+                    )
+
+                    egreso = EgresoMercaderia(
+                        ventaId=venta.id,
+                        ingresoMercaderiaId=ingreso.id,
+                        cantidad=required,
+                    )
+                    db_session.add(egreso)
+                    db_session.flush()
 
             db_session.commit()
         except (KeyError, ValueError, SQLAlchemyError) as exc:

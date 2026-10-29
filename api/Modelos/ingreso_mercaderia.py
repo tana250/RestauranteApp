@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, datetime, time
 from decimal import Decimal
 
-from sqlalchemy import Date, ForeignKey, Numeric
+from sqlalchemy import DateTime, ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -20,7 +20,7 @@ class IngresoMercaderia(Base):
     )
     cantidad: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     precioUnitario: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    fecha: Mapped[date] = mapped_column(Date, nullable=False)
+    fecha: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     proveedor: Mapped["Proveedor"] = relationship(
         back_populates="ingresos_mercaderia", lazy="selectin"
@@ -43,6 +43,9 @@ class IngresoMercaderia(Base):
             if self.precioUnitario is not None
             else None,
             "fecha": self.fecha.isoformat() if self.fecha is not None else None,
+            "proveedorNombre": self.proveedor.nombre if self.proveedor else None,
+            "insumoNombre": self.insumo.nombre if self.insumo else None,
+            "unidadMedida": self.unidad_medida.nombre if self.unidad_medida else None,
         }
 
     @classmethod
@@ -58,9 +61,7 @@ class IngresoMercaderia(Base):
             if campo not in data:
                 raise KeyError(campo)
 
-        fecha = data["fecha"]
-        if isinstance(fecha, str):
-            fecha = date.fromisoformat(fecha)
+        fecha = IngresoMercaderia._a_datetime(data["fecha"])
 
         return cls(
             proveedorId=data["proveedorId"],
@@ -83,7 +84,12 @@ class IngresoMercaderia(Base):
         if "precioUnitario" in data:
             self.precioUnitario = data["precioUnitario"]
         if "fecha" in data:
-            fecha = data["fecha"]
-            if isinstance(fecha, str):
-                fecha = date.fromisoformat(fecha)
-            self.fecha = fecha
+            self.fecha = IngresoMercaderia._a_datetime(data["fecha"])
+
+    @staticmethod
+    def _a_datetime(valor):
+        if isinstance(valor, datetime):
+            return valor
+        if isinstance(valor, date):
+            return datetime.combine(valor, time.min)
+        return datetime.combine(date.fromisoformat(str(valor)), time.min)

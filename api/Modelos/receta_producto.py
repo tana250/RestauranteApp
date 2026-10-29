@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Numeric
+from sqlalchemy import ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -8,6 +8,11 @@ from ..database import Base
 
 class RecetaProducto(Base):
     __tablename__ = "recetas_productos"
+    __table_args__ = (
+        UniqueConstraint(
+            "productoId", "insumoId", name="uq_recetas_producto_insumo"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     productoId: Mapped[int] = mapped_column(ForeignKey("producto.id"), nullable=False)

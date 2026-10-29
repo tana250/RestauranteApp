@@ -55,6 +55,116 @@ def init_db(app=None):
 
     Base.metadata.create_all(bind=engine)
     _migrar_insumos_nullable()
+    _migrar_unicidad()
+    _migrar_egreso_mercaderia()
+    _migrar_tablas_legacy()
+
+
+def _migrar_unicidad():
+    """
+    SQLite no agrega UNIQUE CONSTRAINT a tablas ya existentes: se crean
+    los indices unicos directamente.
+
+    - ``recetas_productos``: clave compuesta (productoId, insumoId).
+    - ``insumos``: clave compuesta (marcaId, nombre).
+    """
+    if engine is None or not engine.url.drivername.startswith("sqlite"):
+        return
+
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        conn.exec_driver_sql(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_recetas_producto_insumo "
+            "ON recetas_productos (productoId, insumoId)"
+        )
+        conn.exec_driver_sql(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_insumos_marca_nombre "
+            "ON insumos (marcaId, nombre)"
+        )
+
+
+def _migrar_egreso_mercaderia():
+    """
+    SQLite no agrega columnas a tablas existentes con ALTER TABLE cuando la
+    tabla usa claves foráneas complejas, así que se recrea ``egreso_mercaderia``
+    para agregar ``ventaId`` (nullable: NULL indica consumo de personal).
+
+    También agrega ``cantidad`` a ``productoVenta`` si la tabla todavía no la
+    tiene (creada antes de incluir el campo).
+    """
+    if engine is None or not engine.url.drivername.startswith("sqlite"):
+        return
+
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        columnas_egreso = {
+            columna["name"]
+            for columna in conn.exec_driver_sql(
+                "PRAGMA table_info(egreso_mercaderia)"
+            ).mappings().all()
+        }
+
+        if "ventaId" not in columnas_egreso:
+            tabla = Base.metadata.tables["egreso_mercaderia"]
+            ddl = str(CreateTable(tabla).compile(dialect=engine.dialect))
+            ddl = ddl.replace(
+                "CREATE TABLE egreso_mercaderia", "CREATE TABLE egreso_mercaderia_new", 1
+            )
+
+            conn.exec_driver_sql("PRAGMA foreign_keys=OFF")
+
+            try:
+                conn.exec_driver_sql("DROP TABLE IF EXISTS egreso_mercaderia_new")
+                conn.exec_driver_sql(ddl)
+                conn.exec_driver_sql(
+                    "INSERT INTO egreso_mercaderia_new (id, ventaId, ingresoMercaderiaId, cantidad) "
+                    "SELECT id, NULL, ingresoMercaderiaId, cantidad FROM egreso_mercaderia"
+                )
+                conn.exec_driver_sql("DROP TABLE egreso_mercaderia")
+                conn.exec_driver_sql("ALTER TABLE egreso_mercaderia_new RENAME TO egreso_mercaderia")
+            finally:
+                conn.exec_driver_sql("PRAGMA foreign_keys=ON")
+
+        columnas_producto_venta = {
+            columna["name"]
+            for columna in conn.exec_driver_sql(
+                "PRAGMA table_info(producto_venta)"
+            ).mappings().all()
+        }
+
+        if "cantidad" not in columnas_producto_venta:
+            conn.exec_driver_sql(
+                "ALTER TABLE producto_venta ADD COLUMN cantidad INTEGER NOT NULL DEFAULT 1"
+            )
+
+
+def _migrar_tablas_legacy():
+    """
+    SQLite no renombra tablas automaticamente al cambiar el metadata.
+
+    Renombra las tablas creadas con nombres camelCase a los nombres
+    snake_case del esquema (``schema.md``).
+    """
+    if engine is None or not engine.url.drivername.startswith("sqlite"):
+        return
+
+    tablas_legacy = {
+        "consumoPersonal": "consumo_personal",
+        "metodosPago": "metodos_pago",
+        "productoVenta": "producto_venta",
+    }
+
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        for tabla_antigua, tabla_nueva in tablas_legacy.items():
+            existe = (
+                conn.exec_driver_sql(
+                    f"SELECT name FROM sqlite_master "
+                    f"WHERE type = 'table' AND name = '{tabla_antigua}'"
+                ).scalar()
+            )
+
+            if existe:
+                conn.exec_driver_sql(
+                    f"ALTER TABLE {tabla_antigua} RENAME TO {tabla_nueva}"
+                )
 
 
 def _migrar_insumos_nullable():

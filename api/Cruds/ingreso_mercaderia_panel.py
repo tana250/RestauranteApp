@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
 
 from flask import jsonify
@@ -49,13 +49,16 @@ def _decimal(valor, campo, positivo=False):
 
 def _fecha(valor):
     if valor in (None, ""):
-        return date.today()
+        return datetime.now()
 
-    if isinstance(valor, date):
+    if isinstance(valor, datetime):
         return valor
 
+    if isinstance(valor, date):
+        return datetime.combine(valor, time.min)
+
     try:
-        return date.fromisoformat(str(valor))
+        return datetime.combine(date.fromisoformat(str(valor)), time.min)
     except ValueError:
         raise ValueError("fecha debe tener formato AAAA-MM-DD")
 

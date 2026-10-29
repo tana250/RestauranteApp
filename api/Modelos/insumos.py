@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -8,6 +8,9 @@ from ..database import Base
 
 class Insumo(Base):
     __tablename__ = "insumos"
+    __table_args__ = (
+        UniqueConstraint("marcaId", "nombre", name="uq_insumos_marca_nombre"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)

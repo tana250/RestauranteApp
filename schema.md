@@ -69,6 +69,10 @@
 > insumos nuevos sólo con el nombre; esos datos se completan después desde
 > el panel de insumos.
 
+**Clave única:** `(marcaId, nombre)` — clave compuesta sobre la que se
+identifica un insumo (nombre de producto de una misma marca). No se
+repite un mismo insumo para la misma marca.
+
 ---
 
 ## ingresoMercaderia
@@ -79,10 +83,10 @@
 | id             | Integer        | PK, AutoIncrement, Index            | Identificador único                              |
 | proveedorId    | Integer        | FK -> proveedor(id), NOT NULL       | Referencia al proveedor                           |
 | insumoId       | Integer        | FK -> insumos(id), NOT NULL         | Referencia al insumo                              |
-| unidadMedidaId | Integer        | FK -> unidades_medida(id), NOT NULL | Referencia a la unidad de medida                  |
+| unidadMedidaId | Integer        | FK -> unidades_medida(id)           | Referencia a la unidad de medida                  |
 | cantidad       | Numeric(10, 3) | NOT NULL                            | Cantidad ingresada                                |
 | precioUnitario | Numeric(10, 2) | NOT NULL                            | Precio unitario del insumo al momento del ingreso |
-| fecha          | Date           | NOT NULL                            | Fecha de ingreso de la mercadería                |
+| fecha          | DateTime       | NOT NULL                            | Fecha de ingreso de la mercadería                |
 
 **Tabla:** `ingreso_mercaderia`
 
@@ -106,6 +110,9 @@
 | unidadMedidaId | Integer        | FK -> unidades_medida(id), NOT NULL | Referencia a la unidad de medida            |
 
 **Tabla:** `recetas_productos`
+
+**Restricciones:** `UNIQUE (productoId, insumoId)` — un producto no puede
+listar el mismo insumo más de una vez en su receta.
 
 **Relaciones:**
 
@@ -177,6 +184,7 @@
 | Campo               | Tipo de Dato   | Restricciones                          | Descripción                         |
 | ------------------- | -------------- | -------------------------------------- | ------------------------------------ |
 | id                  | Integer        | PK, AutoIncrement, Index               | Identificador único                 |
+| ventaId             | Integer        | FK -> venta(id), NULL                 | Venta de la que se egresó; NULL si es consumo de personal |
 | ingresoMercaderiaId | Integer        | FK -> ingreso_mercaderia(id), NOT NULL | Referencia al ingreso de mercadería |
 | cantidad            | Numeric(10, 3) | NOT NULL                               | Cantidad egresada                    |
 
@@ -196,7 +204,7 @@
 | id     | Integer      | PK, AutoIncrement, Index | Identificador único |
 | mozoId | Integer      | FK -> mozo(id), NOT NULL | Referencia al mozo   |
 | mesaId | Integer      | FK -> mesa(id), NOT NULL | Referencia a la mesa |
-| fecha  | Date         | NOT NULL                 | Fecha de la venta    |
+| fecha  | DateTime     | NOT NULL                 | Fecha de la venta    |
 
 **Tabla:** `venta`
 
@@ -216,15 +224,15 @@
 | ventaId            | Integer        | FK -> venta(id), NOT NULL             | Referencia a la venta                      |
 | productoId         | Integer        | FK -> producto(id), NOT NULL          | Referencia al producto                     |
 | precio             | Numeric(10, 2) | NOT NULL                              | Precio del producto al momento de la venta |
-| egresoMercaderiaId | Integer        | FK -> egreso_mercaderia(id), NOT NULL | Referencia al egreso de mercadería        |
+| cantidad | integer | not null | cantidad de producto vendido |
 
-**Tabla:** `productoVenta`
+
+**Tabla:** `producto_venta`
 
 **Relaciones:**
 
 - `ventaId` → `venta(id)`
 - `productoId` → `producto(id)`
-- `egresoMercaderiaId` → `egreso_mercaderia(id)`
 
 ---
 
@@ -236,9 +244,9 @@
 | id                 | Integer      | PK, AutoIncrement, Index              | Identificador único                |
 | personalId         | Integer      | FK -> personal(id), NOT NULL          | Referencia al personal              |
 | egresoMercaderiaId | Integer      | FK -> egreso_mercaderia(id), NOT NULL | Referencia al egreso de mercadería |
-| fecha              | Date         | NOT NULL                              | Fecha del consumo                   |
+| fecha              | DateTime     | NOT NULL                              | Fecha del consumo |
 
-**Tabla:** `consumoPersonal`
+**Tabla:** `consumo_personal`
 
 **Relaciones:**
 
@@ -255,7 +263,7 @@
 | id     | Integer      | PK, AutoIncrement, Index | Identificador único       |
 | metodo | String(50)   | NOT NULL, UNIQUE         | Nombre del método de pago |
 
-**Tabla:** `metodosPago`
+**Tabla:** `metodos_pago`
 
 ---
 

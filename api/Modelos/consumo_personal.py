@@ -1,20 +1,20 @@
-from datetime import date
+from datetime import date, datetime, time
 
-from sqlalchemy import Date, ForeignKey
+from sqlalchemy import DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
 
 
 class ConsumoPersonal(Base):
-    __tablename__ = "consumoPersonal"
+    __tablename__ = "consumo_personal"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     personalId: Mapped[int] = mapped_column(ForeignKey("personal.id"), nullable=False)
     egresoMercaderiaId: Mapped[int] = mapped_column(
         ForeignKey("egreso_mercaderia.id"), nullable=False
     )
-    fecha: Mapped[date] = mapped_column(Date, nullable=False)
+    fecha: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     personal: Mapped["Personal"] = relationship(
         back_populates="consumos_personal", lazy="selectin"
@@ -36,10 +36,12 @@ class ConsumoPersonal(Base):
         for campo in ("personalId", "egresoMercaderiaId", "fecha"):
             if campo not in data:
                 raise KeyError(campo)
-        fecha = data["fecha"]
-        if isinstance(fecha, str):
-            fecha = date.fromisoformat(fecha)
-        return cls(personalId=data["personalId"], egresoMercaderiaId=data["egresoMercaderiaId"], fecha=fecha)
+        fecha = cls._a_datetime(data["fecha"])
+        return cls(
+            personalId=data["personalId"],
+            egresoMercaderiaId=data["egresoMercaderiaId"],
+            fecha=fecha,
+        )
 
     def update_from_json(self, data):
         if "personalId" in data:
@@ -47,7 +49,12 @@ class ConsumoPersonal(Base):
         if "egresoMercaderiaId" in data:
             self.egresoMercaderiaId = data["egresoMercaderiaId"]
         if "fecha" in data:
-            fecha = data["fecha"]
-            if isinstance(fecha, str):
-                fecha = date.fromisoformat(fecha)
-            self.fecha = fecha
+            self.fecha = cls._a_datetime(data["fecha"])
+
+    @staticmethod
+    def _a_datetime(valor):
+        if isinstance(valor, datetime):
+            return valor
+        if isinstance(valor, date):
+            return datetime.combine(valor, time.min)
+        return datetime.combine(date.fromisoformat(str(valor)), time.min)

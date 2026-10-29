@@ -7,7 +7,7 @@ from ..database import Base
 
 
 class MetodoPago(Base):
-    __tablename__ = "metodosPago"
+    __tablename__ = "metodos_pago"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     metodo: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)

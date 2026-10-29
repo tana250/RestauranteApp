@@ -5,6 +5,8 @@ import usePersonal from "../hooks/usePersonal";
 import useProducto from "../hooks/useProducto";
 import * as productoPanelService from "../services/productoPanelService";
 import * as ventaPanelService from "../services/ventaPanelService";
+import useVenta from "../hooks/useVenta";
+import usePagos from "../hooks/usePagos";
 
 const fechaLocal = () => {
   const ahora = new Date();
@@ -22,7 +24,7 @@ const calcularStockDisponible = (detalle) => {
   return { ...principal, disponible };
 };
 
-export default function Ventas() {
+export default function Ventas({ onPagar }) {
   const { items: mesas } = useMesa();
   const { items: mozos } = useMozo();
   const { items: personales } = usePersonal();
@@ -43,6 +45,10 @@ export default function Ventas() {
   const [error, setError] = useState("");
   const [stockProducto, setStockProducto] = useState(null);
   const [cargandoStock, setCargandoStock] = useState(false);
+  const [mostrarVentas, setMostrarVentas] = useState(false);
+
+  const { items: ventas, fetchAll: recargarVentas } = useVenta();
+  const { items: pagos } = usePagos();
 
   const mozoSeleccionado = mozos.find((mozo) => mozo.id === Number(mozoId));
   const mozoNombre = mozoSeleccionado
@@ -174,6 +180,21 @@ export default function Ventas() {
 
     return nombre ? `${nombre} (Mozo ${mozo.id})` : `Mozo #${mozo.id}`;
   };
+
+  const totalDe = (venta) =>
+    (venta.productos || []).reduce(
+      (acc, item) => acc + (item.cantidad || 0) * (item.precio || 0),
+      0
+    );
+
+  const pagadoDe = (venta) =>
+    pagos
+      .filter((pago) => pago.ventaId === venta.id)
+      .reduce((acc, pago) => acc + (pago.importe || 0), 0);
+
+  const ventasPendientes = ventas.filter(
+    (venta) => pagadoDe(venta) < totalDe(venta)
+  );
 
   return (
     <div>
@@ -310,6 +331,100 @@ export default function Ventas() {
               })}
             </tbody>
           </table>
+        )}
+
+        <p>
+          <button
+            type="button"
+            onClick={async () => {
+              const next = !mostrarVentas;
+              setMostrarVentas(next);
+              if (next) {
+                await recargarVentas();
+              }
+            }}
+          >
+            {mostrarVentas ? "Ocultar ventas" : "Ver ventas"}
+          </button>
+        </p>
+
+        {mostrarVentas && (
+          <div>
+            <h3>Ventas registradas</h3>
+            {ventasPendientes.length === 0 && <p>No hay ventas con pago incompleto.</p>}
+            {ventasPendientes.map((venta) => {
+              const mesa = mesas.find((item) => item.id === venta.mesaId);
+              const mozo = mozos.find((item) => item.id === venta.mozoId);
+              const personal = personales.find(
+                (item) => item.id === mozo?.personalId
+              );
+              const productosVenta = venta.productos || [];
+              const total = productosVenta.reduce(
+                (acc, item) => acc + (item.cantidad || 0) * (item.precio || 0),
+                0
+              );
+              const pagado = (venta.pagos || []).reduce(
+                (acc, pago) => acc + (pago.importe || 0),
+                0
+              );
+              const estado =
+                pagado >= total ? "Completo" : pagado > 0 ? "Parcial" : "Sin pago";
+
+              return (
+                <div
+                  key={venta.id}
+                  style={{ border: "1px solid #ccc", padding: "0.5rem", marginBottom: "1rem" }}
+                >
+                  <p>
+                    Venta #{venta.id} - {venta.fecha} - Mesa{" "}
+                    {mesa?.numero ?? "-"} - Mozo{" "}
+                    {personal?.nombre ?? mozo?.id ?? "-"}
+                  </p>
+                  {productosVenta.length === 0 ? (
+                    <p>Sin productos cargados.</p>
+                  ) : (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productosVenta.map((item) => {
+                        const producto = productos.find(
+                          (prod) => prod.id === item.productoId
+                        );
+
+                        return (
+                          <tr key={item.id}>
+                            <td>{producto?.nombre ?? `Producto #${item.productoId}`}</td>
+                            <td>{item.cantidad}</td>
+                            <td>{item.precio}</td>
+                            <td>{(item.cantidad || 0) * (item.precio || 0)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  )}
+                  <p>
+                    <strong>Total: {total}</strong>{" "}
+                    <strong>
+                      Pagado: {pagado} - Estado: {estado}
+                    </strong>
+                  </p>
+                  {onPagar && (
+                    <button type="button" onClick={() => onPagar(venta.id)}>
+                      Pagar
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
 
         <p>

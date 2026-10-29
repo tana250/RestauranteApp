@@ -12,7 +12,7 @@ class Pago(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     ventaId: Mapped[int] = mapped_column(ForeignKey("venta.id"), nullable=False)
-    metodoPagoId: Mapped[int] = mapped_column(ForeignKey("metodosPago.id"), nullable=False)
+    metodoPagoId: Mapped[int] = mapped_column(ForeignKey("metodos_pago.id"), nullable=False)
     importe: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
 

@@ -21,11 +21,11 @@ import ConsumoPersonalNuevo from "../components/ConsumoPersonal/ConsumoPersonalN
 import ConsumoPersonalListar from "../components/ConsumoPersonal/ConsumoPersonalListar";
 import MetodosPagoNuevo from "../components/MetodosPago/MetodosPagoNuevo";
 import MetodosPagoListar from "../components/MetodosPago/MetodosPagoListar";
-import PagosNuevo from "../components/Pagos/PagosNuevo";
-import PagosListar from "../components/Pagos/PagosListar";
-import Productos from "./Productos";
-import Mercaderia from "./Mercaderia";
 import Ventas from "./Ventas";
+import Stock from "./Stock";
+import Mercaderia from "./Mercaderia";
+import Productos from "./Productos";
+import Pagos from "./Pagos";
 
 const secciones = [
   { key: "proveedor", label: "Proveedor", Nuevo: ProveedorNuevo, Listar: ProveedorListar },
@@ -33,6 +33,7 @@ const secciones = [
   { key: "tiposInsumo", label: "Tipos de Insumo", Nuevo: TiposInsumoNuevo, Listar: TiposInsumoListar },
   { key: "marcas", label: "Marcas", Nuevo: MarcasNuevo, Listar: MarcasListar },
   { key: "mercaderia", label: "Mercadería", Page: Mercaderia },
+  { key: "stock", label: "Stock", Page: Stock },
   { key: "productos", label: "Productos", Page: Productos },
   { key: "personal", label: "Personal", Nuevo: PersonalNuevo, Listar: PersonalListar },
   { key: "mozo", label: "Mozo", Nuevo: MozoNuevo, Listar: MozoListar },
@@ -42,12 +43,18 @@ const secciones = [
   { key: "productoVenta", label: "Producto Venta", Nuevo: ProductoVentaNuevo, Listar: ProductoVentaListar },
   { key: "consumoPersonal", label: "Consumo Personal", Nuevo: ConsumoPersonalNuevo, Listar: ConsumoPersonalListar },
   { key: "metodosPago", label: "Métodos de Pago", Nuevo: MetodosPagoNuevo, Listar: MetodosPagoListar },
-  { key: "pagos", label: "Pagos", Nuevo: PagosNuevo, Listar: PagosListar },
+  { key: "pagos", label: "Pagos", Page: Pagos },
 ];
 
 export default function AdminPanel() {
   const [activa, setActiva] = useState(secciones[0].key);
+  const [pagoVentaId, setPagoVentaId] = useState(null);
   const seccion = secciones.find((s) => s.key === activa);
+
+  const irAPagar = (ventaId) => {
+    setPagoVentaId(ventaId);
+    setActiva("pagos");
+  };
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -68,7 +75,13 @@ export default function AdminPanel() {
       <main style={{ flex: 1, padding: "1rem" }}>
         <h1>{seccion.label}</h1>
         {seccion.Page ? (
-          <seccion.Page />
+          seccion.key === "ventas" ? (
+            <seccion.Page onPagar={irAPagar} />
+          ) : seccion.key === "pagos" ? (
+            <seccion.Page ventaIdPrevia={pagoVentaId} />
+          ) : (
+            <seccion.Page />
+          )
         ) : (
           <>
             <section style={{ marginBottom: "2rem" }}>

@@ -192,11 +192,10 @@ class ProductoGuardarAPI(MethodView):
                     unidad = _resolver_unidad(item)
                     cantidad = _decimal(item.get("cantidad"), "cantidad", positivo=True)
 
-                    clave = (insumo.id, unidad.id)
+                    clave = insumo.id
                     if clave in vistos:
                         raise ValueError(
-                            f"El insumo {insumo.nombre} está repetido "
-                            f"con la misma unidad de medida"
+                            f"El insumo {insumo.nombre} está repetido en la receta"
                         )
                     vistos.add(clave)
 

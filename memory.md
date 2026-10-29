@@ -4,12 +4,12 @@
 - Personal: id, dni, nombre
 - Mozo: id, personalId (FK personal.id)
 - Mesa: id, numero
-- EgresoMercaderia: id, ingresoMercaderiaId (FK ingreso_mercaderia.id), cantidad
-- Venta: id, mozoId (FK mozo.id), mesaId (FK mesa.id), fecha
-- ProductoVenta: id, ventaId (FK venta.id), productoId (FK producto.id), precio, egresoMercaderiaId (FK egreso_mercaderia.id)
-- ConsumoPersonal: id, personalId (FK personal.id), egresoMercaderiaId (FK egreso_mercaderia.id), fecha
-- MetodosPago: id, metodo
-- Pagos: id, ventaId (FK venta.id), metodoPagoId (FK metodosPago.id), importe, fecha
+- EgresoMercaderia: id, ingresoMercaderiaId (FK ingreso_mercaderia.id), cantidad, ventaId (FK nullable venta.id; NULL = consumo personal)
+- Venta: id, mozoId (FK mozo.id), mesaId (FK mesa.id), fecha (DateTime)
+- ProductoVenta: id, ventaId (FK venta.id), productoId (FK producto.id), precio, cantidad (integer, NOT NULL, default 1)
+- ConsumoPersonal: id, personalId (FK personal.id), egresoMercaderiaId (FK egreso_mercaderia.id), fecha (DateTime)
+- MetodosPago: id, metodo (tabla `metodos_pago`)
+- Pagos: id, ventaId (FK venta.id, NOT NULL), metodoPagoId (FK metodos_pago.id), importe, fecha (Date)
 - Modelos creados con estilo Mapped/mapped_column + relaciones + to_json/from_json/update_from_json
 - CRUDs creados con register_api (ItemAPI/GroupAPI)
 - api/__init__.py actualizado para registrar todas las nuevas APIs
@@ -23,3 +23,28 @@
 - Nuevo `PATCH /insumos/guardar`: actualiza `marcaId`/`tipoInsumoId` de varios insumos en un solo JSON y una transacción.
 - `Insumo.to_json()` ahora incluye `marcaNombre` y `tipoInsumoNombre`.
 - Frontend: `pages/Mercaderia.jsx` con ingresos (proveedor/insumo seleccionables o nuevos) y edición masiva de marca/tipo de insumos; reemplaza las secciones Insumos e Ingreso de Mercadería del `AdminPanel`.
+- Cambios aplicados (2026-10-28):
+  - `recetas_productos`: clave única compuesta `UNIQUE (productoId, insumoId)` (el mismo insumo no se repite en la receta de un producto).
+  - `insumos`: clave única compuesta `UNIQUE (marcaId, nombre)`.
+  - `api/database.py`: `_migrar_unicidad()` crea los índices únicos en SQLite (`uq_recetas_producto_insumo`, `uq_insumos_marca_nombre`) para tablas existentes.
+  - `ProductoVenta`: se agregó el campo `cantidad` (integer, NOT NULL, default 1) — coincide con `schema.md`; se persiste y devuelve en ventas.
+  - `ProductoGuardarAPI`: la receta ya no permite repetir el mismo insumo (validación por `insumoId`).
+  - Rediseño egreso/venta (critica 2, aplicada según cambio en `schema.md`):
+    - `egreso_mercaderia` ganó `ventaId` (FK nullable → `venta.id`; NULL = consumo personal).
+    - `productoVenta` ya no referencia `egresoMercaderiaId`; la venta queda en el egreso.
+    - `VentaGuardarAPI` ahora itera TODOS los insumos de la receta del producto y crea un egreso por insumo consumido.
+    - `api/database.py`: `_migrar_egreso_mercaderia()` agrega `cantidad` a `productoVenta` y recrea `egreso_mercaderia` con `ventaId`.
+    - `Venta.to_json()` incluye `productos` (para el botón de ventas con totales).
+- Cambios aplicados (2026-10-28, segunda parte — sincronización con `schema.md` + page de pagos):
+  - Modelos sincronizados con `schema.md`:
+    - `venta`, `ingreso_mercaderia`, `consumo_personal`: `fecha` ahora es `DateTime` (con conversión `_a_datetime` que acepta `AAAA-MM-DD`).
+    - Tablas renombradas a snake_case según `schema.md`: `metodosPago` → `metodos_pago`, `consumoPersonal` → `consumo_personal`, `productoVenta` → `producto_venta`.
+    - `pagos.ventaId` sigue `NOT NULL` (FK `venta.id`): una venta sin pago simplemente no tiene filas en `pagos` (estado `sin_pago`).
+  - `api/database.py`: `_migrar_tablas_legacy()` renombra tablas legacy camelCase a snake_case en SQLite.
+  - `Venta.to_json()` incluye ahora `pagos`, `total`, `pagado` y `estado` (`completo` / `parcial` / `sin_pago`).
+  - Nuevos endpoints:
+    - `GET /pagos/venta/<int:ventaId>`: devuelve venta + pagos + total + pagado + estado.
+    - `POST /pagos/guardar`: registra un pago (`ventaId`, `metodoPagoId`, `importe`, `fecha`) con validaciones (venta y método de pago deben existir, importe > 0).
+  - Frontend:
+    - Nuevo `pages/Pagos.jsx`: alta de pago para ventas con pago parcial o sin pago (método de pago + importe total o parcial, con botón "Importar total"), y listado de pagos con mesa, mozo, productos (con cantidad y total), total/pagado y estado. Checkbox "Solo mostrar pagos completos".
+    - `pages/Ventas.jsx`: la lista de ventas (con "Ver ventas") muestra solo las que tienen pago incompleto; cada una con botón "Pagar" (va a la page de pagos con la venta precargada).

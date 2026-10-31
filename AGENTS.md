@@ -25,6 +25,7 @@
 - `GroupAPI.get()` supports `?activo=true|false` only if model has `activo`.
 - Product panel: `POST /producto/guardar` (product + `insumos[]` in one transaction; creates missing insumos by name) and `GET /producto/<id>/detalle` (recipe + stock). Stock = ingresos - egresos; kg/g and lt/ml are converted.
 - Mercadería panel: `POST /ingresoMercaderia/guardar` (proveedor/insumo by id or name; creates missing ones + ingreso atomically) and `PATCH /insumos/guardar` (`insumos[]` with `marcaId`/`tipoInsumoId` in one transaction).
+- Consumo personal: `POST /consumoPersonal/guardar` (panel) recibe `personalId`, `fecha`, `hora` y `egresos[]` (insumo/cantidad/unidad o `ingresoMercaderiaId`); crea el/los egreso(s) de mercadería (`ventaId` NULL) + consumo en una transacción y valida stock (`api.stock.ingreso_con_stock_suficiente`) con rollback ante error.
 - Errors go through `respuesta_error()` -> JSON with appropriate status codes.
 - CORS enabled in `api.create_app()` via `flask-cors` (allow all origins for dev).
 

@@ -14,6 +14,13 @@ const fechaLocal = () => {
   return new Date(ahora.getTime() - offset).toISOString().slice(0, 10);
 };
 
+const horaLocal = () => {
+  const ahora = new Date();
+  const hh = String(ahora.getHours()).padStart(2, "0");
+  const mm = String(ahora.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+};
+
 const calcularStockDisponible = (detalle) => {
   if (!detalle) return null;
   const insumosStock = detalle.insumos || [];
@@ -37,6 +44,7 @@ export default function Ventas({ onPagar }) {
   const [mesaId, setMesaId] = useState("");
   const [mozoId, setMozoId] = useState("");
   const [fecha, setFecha] = useState(() => fechaLocal());
+  const [hora, setHora] = useState(() => horaLocal());
   const [lineaProducto, setLineaProducto] = useState("");
   const [cantidadProducto, setCantidadProducto] = useState("1");
   const [lineas, setLineas] = useState([]);
@@ -149,6 +157,7 @@ export default function Ventas({ onPagar }) {
       mesaId: Number(mesaId),
       mozoId: Number(mozoId),
       fecha,
+      hora,
       productos: lineas.map((linea) => ({
         productoId: linea.productoId,
         cantidad: linea.cantidad,
@@ -233,6 +242,15 @@ export default function Ventas({ onPagar }) {
               type="date"
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
+              required
+            />
+          </label>{" "}
+          <label>
+            Hora:{" "}
+            <input
+              type="time"
+              value={hora}
+              onChange={(e) => setHora(e.target.value)}
               required
             />
           </label>
@@ -376,7 +394,8 @@ export default function Ventas({ onPagar }) {
                   style={{ border: "1px solid #ccc", padding: "0.5rem", marginBottom: "1rem" }}
                 >
                   <p>
-                    Venta #{venta.id} - {venta.fecha} - Mesa{" "}
+                    Venta #{venta.id} - {venta.fecha}
+                    {venta.hora ? ` ${venta.hora}` : ""} - Mesa{" "}
                     {mesa?.numero ?? "-"} - Mozo{" "}
                     {personal?.nombre ?? mozo?.id ?? "-"}
                   </p>

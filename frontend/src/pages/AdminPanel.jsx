@@ -17,8 +17,7 @@ import EgresoMercaderiaNuevo from "../components/EgresoMercaderia/EgresoMercader
 import EgresoMercaderiaListar from "../components/EgresoMercaderia/EgresoMercaderiaListar";
 import ProductoVentaNuevo from "../components/ProductoVenta/ProductoVentaNuevo";
 import ProductoVentaListar from "../components/ProductoVenta/ProductoVentaListar";
-import ConsumoPersonalNuevo from "../components/ConsumoPersonal/ConsumoPersonalNuevo";
-import ConsumoPersonalListar from "../components/ConsumoPersonal/ConsumoPersonalListar";
+import ConsumoPersonal from "./ConsumoPersonal";
 import MetodosPagoNuevo from "../components/MetodosPago/MetodosPagoNuevo";
 import MetodosPagoListar from "../components/MetodosPago/MetodosPagoListar";
 import Ventas from "./Ventas";
@@ -41,7 +40,7 @@ const secciones = [
   { key: "egresoMercaderia", label: "Egreso de Mercadería", Nuevo: EgresoMercaderiaNuevo, Listar: EgresoMercaderiaListar },
   { key: "ventas", label: "Ventas", Page: Ventas },
   { key: "productoVenta", label: "Producto Venta", Nuevo: ProductoVentaNuevo, Listar: ProductoVentaListar },
-  { key: "consumoPersonal", label: "Consumo Personal", Nuevo: ConsumoPersonalNuevo, Listar: ConsumoPersonalListar },
+  { key: "consumoPersonal", label: "Consumo Personal", Page: ConsumoPersonal },
   { key: "metodosPago", label: "Métodos de Pago", Nuevo: MetodosPagoNuevo, Listar: MetodosPagoListar },
   { key: "pagos", label: "Pagos", Page: Pagos },
 ];

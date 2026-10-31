@@ -1,8 +1,8 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import List
 
-from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy import DateTime, ForeignKey, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -15,6 +15,7 @@ class Venta(Base):
     mozoId: Mapped[int] = mapped_column(ForeignKey("mozo.id"), nullable=False)
     mesaId: Mapped[int] = mapped_column(ForeignKey("mesa.id"), nullable=False)
     fecha: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    hora: Mapped[time] = mapped_column(Time, nullable=False)
 
     mozo: Mapped["Mozo"] = relationship(back_populates="ventas", lazy="selectin")
     mesa: Mapped["Mesa"] = relationship(back_populates="ventas", lazy="selectin")
@@ -49,6 +50,7 @@ class Venta(Base):
             "mozoId": self.mozoId,
             "mesaId": self.mesaId,
             "fecha": self.fecha.isoformat() if self.fecha is not None else None,
+            "hora": self.hora.isoformat() if self.hora is not None else None,
             "productos": [
                 {
                     "id": producto_venta.id,
@@ -69,6 +71,7 @@ class Venta(Base):
                     "metodoPagoId": pago.metodoPagoId,
                     "importe": float(pago.importe) if pago.importe is not None else None,
                     "fecha": pago.fecha.isoformat() if pago.fecha is not None else None,
+                    "hora": pago.hora.isoformat() if pago.hora is not None else None,
                 }
                 for pago in self.pagos
             ],
@@ -79,11 +82,12 @@ class Venta(Base):
 
     @classmethod
     def from_json(cls, data):
-        for campo in ("mozoId", "mesaId", "fecha"):
+        for campo in ("mozoId", "mesaId", "fecha", "hora"):
             if campo not in data:
                 raise KeyError(campo)
         fecha = cls._a_datetime(data["fecha"])
-        return cls(mozoId=data["mozoId"], mesaId=data["mesaId"], fecha=fecha)
+        hora = cls._a_time(data["hora"])
+        return cls(mozoId=data["mozoId"], mesaId=data["mesaId"], fecha=fecha, hora=hora)
 
     def update_from_json(self, data):
         if "mozoId" in data:
@@ -92,11 +96,29 @@ class Venta(Base):
             self.mesaId = data["mesaId"]
         if "fecha" in data:
             self.fecha = self._a_datetime(data["fecha"])
+        if "hora" in data:
+            self.hora = self._a_time(data["hora"])
 
     @staticmethod
     def _a_datetime(valor):
         if isinstance(valor, datetime):
             return valor
         if isinstance(valor, date):
-            return datetime.combine(valor, datetime.min.time())
-        return datetime.combine(date.fromisoformat(str(valor)), datetime.min.time())
+            return datetime.combine(valor, time.min)
+        return datetime.combine(date.fromisoformat(str(valor)), time.min)
+
+    @staticmethod
+    def _a_time(valor):
+        if isinstance(valor, time):
+            return valor
+        if isinstance(valor, datetime):
+            return valor.time()
+        if isinstance(valor, date):
+            return time(0, 0, 0)
+        texto = str(valor).strip()
+        if not texto:
+            return time(0, 0, 0)
+        try:
+            return time.fromisoformat(texto)
+        except ValueError:
+            raise ValueError("hora debe tener formato HH:MM[:SS]")

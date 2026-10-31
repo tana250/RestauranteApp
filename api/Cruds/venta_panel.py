@@ -15,7 +15,7 @@ from ..Modelos.producto import Producto
 from ..Modelos.producto_venta import ProductoVenta
 from ..Modelos.receta_producto import RecetaProducto
 from ..Modelos.venta import Venta
-from ..stock import stock_disponible, stock_por_insumo
+from ..stock import ingreso_con_stock_suficiente
 from .crudGenerico import datos_json, respuesta_error
 
 
@@ -60,6 +60,29 @@ def _fecha(valor):
         raise ValueError("fecha debe tener formato AAAA-MM-DD")
 
 
+def _hora(valor):
+    if valor in (None, ""):
+        return datetime.now().time()
+
+    if isinstance(valor, time):
+        return valor
+
+    if isinstance(valor, datetime):
+        return valor.time()
+
+    if isinstance(valor, date):
+        return time(0, 0, 0)
+
+    texto = str(valor).strip()
+    if not texto:
+        return time(0, 0, 0)
+
+    try:
+        return time.fromisoformat(texto)
+    except ValueError:
+        raise ValueError("hora debe tener formato HH:MM[:SS]")
+
+
 def _resolver_mesa(data):
     mesa = db_session.get(Mesa, _entero(data.get("mesaId"), "mesaId"))
     if mesa is None:
@@ -97,43 +120,12 @@ def _resolver_producto(data):
 
 
 def _ingreso_disponible(insumo_id, unidad_nombre, cantidad):
-    stock = stock_por_insumo()
-    disponible, suficiente = stock_disponible(
-        stock,
+    return ingreso_con_stock_suficiente(
         insumo_id,
         unidad_nombre,
         cantidad,
+        mensaje="Stock insuficiente para la venta",
     )
-
-    if not suficiente:
-        raise ValueError("Stock insuficiente para la venta")
-
-    ingresos = db_session.scalars(
-        select(IngresoMercaderia)
-        .where(IngresoMercaderia.insumoId == insumo_id)
-        .order_by(IngresoMercaderia.id)
-    ).all()
-
-    from ..stock import _grupo_y_factor
-
-    grupo, factor = _grupo_y_factor(unidad_nombre)
-
-    for ingreso in ingresos:
-        egresos = db_session.scalars(
-            select(EgresoMercaderia).where(
-                EgresoMercaderia.ingresoMercaderiaId == ingreso.id
-            )
-        ).all()
-        egresado = sum(
-            (egreso.cantidad or Decimal("0")) for egreso in egresos
-        )
-        restante_base = ingreso.cantidad - egresado
-        restante = restante_base / factor if factor else restante_base
-
-        if restante >= cantidad:
-            return ingreso
-
-    raise ValueError("No hay stock disponible para el ingreso")
 
 
 def _respuesta_venta(venta):
@@ -142,6 +134,7 @@ def _respuesta_venta(venta):
         "mozoId": venta.mozoId,
         "mesaId": venta.mesaId,
         "fecha": venta.fecha.isoformat() if venta.fecha is not None else None,
+        "hora": venta.hora.isoformat() if venta.hora is not None else None,
         "productos": [
             {
                 "id": producto_venta.id,
@@ -206,6 +199,8 @@ class VentaGuardarAPI(MethodView):
             mesa = _resolver_mesa(data)
             mozo = _resolver_mozo(data)
             fecha = _fecha(data.get("fecha"))
+            hora = _hora(data.get("hora"))
+            fecha = datetime.combine(fecha.date(), hora)
             producto_lines = data.get("productos")
 
             if not isinstance(producto_lines, list) or not producto_lines:
@@ -215,6 +210,7 @@ class VentaGuardarAPI(MethodView):
                 mozoId=mozo.id,
                 mesaId=mesa.id,
                 fecha=fecha,
+                hora=hora,
             )
             db_session.add(venta)
             db_session.flush()

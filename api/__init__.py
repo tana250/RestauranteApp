@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 
 from .Cruds.consumo_personal import register_consumo_personal
+from .Cruds.consumo_personal_panel import register_consumo_personal_panel
 from .Cruds.egreso_mercaderia import register_egreso_mercaderia
 from .Cruds.ingreso_mercaderia import register_ingreso_mercaderia
 from .Cruds.ingreso_mercaderia_panel import register_ingreso_mercaderia_panel
@@ -66,6 +67,7 @@ def create_app(test_config=None):
     register_venta_panel(app)
     register_producto_venta(app)
     register_consumo_personal(app)
+    register_consumo_personal_panel(app)
     register_metodos_pago(app)
     register_pagos(app)
 

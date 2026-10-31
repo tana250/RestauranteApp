@@ -15,6 +15,13 @@ const fechaLocal = () => {
   return new Date(ahora.getTime() - offset).toISOString().slice(0, 10);
 };
 
+const horaLocal = () => {
+  const ahora = new Date();
+  const hh = String(ahora.getHours()).padStart(2, "0");
+  const mm = String(ahora.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+};
+
 const crearLinea = () => ({
   key: `${Date.now()}-${Math.random()}`,
   insumoNombre: "",
@@ -43,6 +50,7 @@ export default function Mercaderia() {
   const [proveedorId, setProveedorId] = useState(null);
   const [lineas, setLineas] = useState([crearLinea()]);
   const [fecha, setFecha] = useState(() => fechaLocal());
+  const [hora, setHora] = useState(() => horaLocal());
   const [guardandoIngreso, setGuardandoIngreso] = useState(false);
 
   const [cambios, setCambios] = useState({});
@@ -141,6 +149,7 @@ export default function Mercaderia() {
       unidadMedidaId: Number(linea.unidadMedidaId),
       precioUnitario: Number(linea.precioUnitario),
       fecha: fecha || fechaLocal(),
+      hora: hora || horaLocal(),
       ...(linea.tipoInsumoId ? { tipoInsumoId: Number(linea.tipoInsumoId) } : {}),
       ...(linea.tipoInsumoNombre ? { tipoInsumoNombre: linea.tipoInsumoNombre } : {}),
       ...(linea.marcaId ? { marcaId: Number(linea.marcaId) } : {}),
@@ -421,6 +430,15 @@ export default function Mercaderia() {
                 type="date"
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
+                required
+              />
+            </label>{" "}
+            <label>
+              Hora:{" "}
+              <input
+                type="time"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
                 required
               />
             </label>

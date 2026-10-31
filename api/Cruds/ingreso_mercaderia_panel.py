@@ -63,6 +63,29 @@ def _fecha(valor):
         raise ValueError("fecha debe tener formato AAAA-MM-DD")
 
 
+def _hora(valor):
+    if valor in (None, ""):
+        return datetime.now().time()
+
+    if isinstance(valor, time):
+        return valor
+
+    if isinstance(valor, datetime):
+        return valor.time()
+
+    if isinstance(valor, date):
+        return time(0, 0, 0)
+
+    texto = str(valor).strip()
+    if not texto:
+        return time(0, 0, 0)
+
+    try:
+        return time.fromisoformat(texto)
+    except ValueError:
+        raise ValueError("hora debe tener formato HH:MM[:SS]")
+
+
 def _resolver_proveedor(data):
     proveedor_id = data.get("proveedorId")
 
@@ -194,6 +217,7 @@ def _respuesta_ingreso(ingreso):
         "cantidad": float(ingreso.cantidad),
         "precioUnitario": float(ingreso.precioUnitario),
         "fecha": ingreso.fecha.isoformat(),
+        "hora": ingreso.hora.isoformat() if ingreso.hora is not None else None,
     }
 
 
@@ -204,6 +228,8 @@ def _crear_ingreso(data):
     cantidad = _decimal(data.get("cantidad"), "cantidad", positivo=True)
     precio = _decimal(data.get("precioUnitario", data.get("precio")), "precioUnitario")
     fecha = _fecha(data.get("fecha"))
+    hora = _hora(data.get("hora"))
+    fecha = datetime.combine(fecha.date(), hora)
 
     ingreso = IngresoMercaderia(
         proveedorId=proveedor.id,
@@ -212,6 +238,7 @@ def _crear_ingreso(data):
         cantidad=cantidad,
         precioUnitario=precio,
         fecha=fecha,
+        hora=hora,
     )
     db_session.add(ingreso)
     return ingreso

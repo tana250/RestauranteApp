@@ -86,7 +86,8 @@ repite un mismo insumo para la misma marca.
 | unidadMedidaId | Integer        | FK -> unidades_medida(id)           | Referencia a la unidad de medida                  |
 | cantidad       | Numeric(10, 3) | NOT NULL                            | Cantidad ingresada                                |
 | precioUnitario | Numeric(10, 2) | NOT NULL                            | Precio unitario del insumo al momento del ingreso |
-| fecha          | DateTime       | NOT NULL                            | Fecha de ingreso de la mercadería                |
+| fecha          | DateTime      | NOT NULL                            | Fecha de ingreso de la mercadería                |
+| hora           | Time          | NOT NULL                            | Hora de ingreso de la mercadería                |
 
 **Tabla:** `ingreso_mercaderia`
 
@@ -205,6 +206,8 @@ listar el mismo insumo más de una vez en su receta.
 | mozoId | Integer      | FK -> mozo(id), NOT NULL | Referencia al mozo   |
 | mesaId | Integer      | FK -> mesa(id), NOT NULL | Referencia a la mesa |
 | fecha  | DateTime     | NOT NULL                 | Fecha de la venta    |
+| hora   | Time         | NOT NULL                 | Hora de la venta    |
+
 
 **Tabla:** `venta`
 
@@ -245,6 +248,8 @@ listar el mismo insumo más de una vez en su receta.
 | personalId         | Integer      | FK -> personal(id), NOT NULL          | Referencia al personal              |
 | egresoMercaderiaId | Integer      | FK -> egreso_mercaderia(id), NOT NULL | Referencia al egreso de mercadería |
 | fecha              | DateTime     | NOT NULL                              | Fecha del consumo |
+| hora               | Time         | NOT NULL                              | Hora del consumo |
+
 
 **Tabla:** `consumo_personal`
 
@@ -277,6 +282,8 @@ listar el mismo insumo más de una vez en su receta.
 | metodoPagoId | Integer        | FK -> metodosPago(id), NOT NULL | Referencia al método de pago |
 | importe      | Numeric(10, 2) | NOT NULL                        | Importe pagado                |
 | fecha        | Date           | NOT NULL                        | Fecha del pago                |
+| hora         | Time           | NOT NULL                        | Hora del pago                |
+
 
 **Tabla:** `pagos`
 

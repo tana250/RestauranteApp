@@ -106,3 +106,42 @@ def stock_disponible(stock, insumo_id, unidad, cantidad):
 
     disponible = base / factor if factor else base
     return disponible, base >= requerido
+
+
+def ingreso_con_stock_suficiente(insumo_id, unidad_nombre, cantidad, mensaje="Stock insuficiente"):
+    """
+    Devuelve el ingreso de mercadería con stock suficiente para un
+    consumo/egreso, o lanza ValueError si no hay.
+
+    El stock se calcula como ingresos menos egresos ya registrados.
+    """
+    stock = stock_por_insumo()
+    disponible, suficiente = stock_disponible(stock, insumo_id, unidad_nombre, cantidad)
+
+    if not suficiente:
+        raise ValueError(mensaje)
+
+    ingresos = db_session.scalars(
+        select(IngresoMercaderia)
+        .where(IngresoMercaderia.insumoId == insumo_id)
+        .order_by(IngresoMercaderia.id)
+    ).all()
+
+    grupo, factor = _grupo_y_factor(unidad_nombre or "")
+
+    for ingreso in ingresos:
+        egresos = db_session.scalars(
+            select(EgresoMercaderia).where(
+                EgresoMercaderia.ingresoMercaderiaId == ingreso.id
+            )
+        ).all()
+        egresado = sum(
+            (egreso.cantidad or Decimal("0")) for egreso in egresos
+        )
+        restante_base = ingreso.cantidad - egresado
+        restante = restante_base / factor if factor else restante_base
+
+        if restante >= cantidad:
+            return ingreso
+
+    raise ValueError("No hay stock disponible para el insumo")

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
 
 from flask import jsonify
@@ -51,6 +51,29 @@ def _fecha(valor):
         raise ValueError("fecha debe tener formato AAAA-MM-DD")
 
 
+def _hora(valor):
+    if valor in (None, ""):
+        return datetime.now().time()
+
+    if isinstance(valor, time):
+        return valor
+
+    if isinstance(valor, datetime):
+        return valor.time()
+
+    if isinstance(valor, date):
+        return time(0, 0, 0)
+
+    texto = str(valor).strip()
+    if not texto:
+        return time(0, 0, 0)
+
+    try:
+        return time.fromisoformat(texto)
+    except ValueError:
+        raise ValueError("hora debe tener formato HH:MM[:SS]")
+
+
 class PagosVentaAPI(MethodView):
     """Registra un pago sobre una venta y consulta su estado."""
 
@@ -64,6 +87,7 @@ class PagosVentaAPI(MethodView):
             metodo_pago_id = _entero(data.get("metodoPagoId"), "metodoPagoId")
             importe = _decimal(data.get("importe"), "importe", positivo=True)
             fecha_pago = _fecha(data.get("fecha"))
+            hora_pago = _hora(data.get("hora"))
 
             venta = db_session.get(Venta, venta_id)
             if venta is None:
@@ -78,6 +102,7 @@ class PagosVentaAPI(MethodView):
                 metodoPagoId=metodo_pago_id,
                 importe=importe,
                 fecha=fecha_pago,
+                hora=hora_pago,
             )
             db_session.add(pago)
             db_session.commit()

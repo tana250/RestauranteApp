@@ -14,6 +14,13 @@ const fechaLocal = () => {
   return new Date(ahora.getTime() - offset).toISOString().slice(0, 10);
 };
 
+const horaLocal = () => {
+  const ahora = new Date();
+  const hh = String(ahora.getHours()).padStart(2, "0");
+  const mm = String(ahora.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+};
+
 export default function Pagos({ ventaIdPrevia }) {
   const {
     items: ventas,
@@ -31,6 +38,7 @@ export default function Pagos({ ventaIdPrevia }) {
   const [metodoPagoId, setMetodoPagoId] = useState("");
   const [importe, setImporte] = useState("");
   const [fecha, setFecha] = useState(() => fechaLocal());
+  const [hora, setHora] = useState(() => horaLocal());
   const [soloCompletos, setSoloCompletos] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -132,6 +140,7 @@ export default function Pagos({ ventaIdPrevia }) {
         metodoPagoId: Number(metodoPagoId),
         importe: importeNumero,
         fecha,
+        hora,
       });
       setMensaje(`Pago registrado correctamente (id: ${data.data.id})`);
       setVentaId("");
@@ -230,6 +239,15 @@ export default function Pagos({ ventaIdPrevia }) {
             required
           />
         </label>{" "}
+        <label>
+          Hora:{" "}
+          <input
+            type="time"
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            required
+          />
+        </label>{" "}
         <button type="submit">Registrar pago</button>
       </form>
 
@@ -277,6 +295,7 @@ export default function Pagos({ ventaIdPrevia }) {
                   <td>{nombreMetodo(pago.metodoPagoId)}</td>
                   <td>{pago.importe}</td>
                   <td>{pago.fecha}</td>
+                  <td>{pago.hora}</td>
                   <td>{info ? info.mesa : "-"}</td>
                   <td>{info ? info.mozo : "-"}</td>
                   <td>

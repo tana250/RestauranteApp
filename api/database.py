@@ -58,6 +58,7 @@ def init_db(app=None):
     _migrar_unicidad()
     _migrar_egreso_mercaderia()
     _migrar_tablas_legacy()
+    _migrar_hora()
 
 
 def _migrar_unicidad():
@@ -165,6 +166,42 @@ def _migrar_tablas_legacy():
                 conn.exec_driver_sql(
                     f"ALTER TABLE {tabla_antigua} RENAME TO {tabla_nueva}"
                 )
+
+
+def _migrar_hora():
+    """
+    SQLite no agrega columnas NOT NULL a tablas existentes con ALTER
+    TABLE si no se indica un default, así que se agregan las columnas
+    ``hora`` (Time, NOT NULL) con un default y luego se reutilizan.
+
+    Las entidades que ganaron el campo ``hora`` desacoplado de ``fecha``:
+    ``ingreso_mercaderia``, ``venta``, ``consumo_personal`` y ``pagos``.
+    """
+    if engine is None or not engine.url.drivername.startswith("sqlite"):
+        return
+
+    columnas_nuevas = {
+        "ingreso_mercaderia": "hora",
+        "venta": "hora",
+        "consumo_personal": "hora",
+        "pagos": "hora",
+    }
+
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        for tabla, columna in columnas_nuevas.items():
+            existentes = {
+                columna_info["name"]
+                for columna_info in conn.exec_driver_sql(
+                    f"PRAGMA table_info({tabla})"
+                ).mappings().all()
+            }
+
+            if columna in existentes:
+                continue
+
+            conn.exec_driver_sql(
+                f"ALTER TABLE {tabla} ADD COLUMN {columna} TIME NOT NULL DEFAULT '00:00:00'"
+            )
 
 
 def _migrar_insumos_nullable():

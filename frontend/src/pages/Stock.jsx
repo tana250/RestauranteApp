@@ -36,6 +36,8 @@ export default function Stock() {
               <th>Unidad</th>
               <th>Cantidad ingresada</th>
               <th>Precio unitario</th>
+              <th>Fecha</th>
+              <th>Hora</th>
               <th>Egresado</th>
               <th>Stock actual</th>
             </tr>
@@ -49,6 +51,8 @@ export default function Stock() {
                 <td>{fila.unidadMedida}</td>
                 <td>{fila.cantidad}</td>
                 <td>{fila.precioUnitario}</td>
+                <td>{fila.fecha}</td>
+                <td>{fila.hora}</td>
                 <td>{fila.egresado}</td>
                 <td>{fila.stock}</td>
               </tr>

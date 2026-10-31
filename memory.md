@@ -48,3 +48,14 @@
   - Frontend:
     - Nuevo `pages/Pagos.jsx`: alta de pago para ventas con pago parcial o sin pago (método de pago + importe total o parcial, con botón "Importar total"), y listado de pagos con mesa, mozo, productos (con cantidad y total), total/pagado y estado. Checkbox "Solo mostrar pagos completos".
     - `pages/Ventas.jsx`: la lista de ventas (con "Ver ventas") muestra solo las que tienen pago incompleto; cada una con botón "Pagar" (va a la page de pagos con la venta precargada).
+- Cambios aplicados (2026-10-30):
+  - Sincronización con `schema.md` y campo `hora` desacoplado de `fecha`:
+    - `ingreso_mercaderia`, `venta`, `consumo_personal` y `pagos` ganaron `hora` (Time, NOT NULL); `fecha` pasa a ser DateTime en las entidades que ya lo usaban con hora (ingreso/venta/consumo) y se mantiene Date en `pagos`.
+    - `IngresoMercaderia`, `Venta`, `ConsumoPersonal` y `Pago` actualizan `to_json`/`from_json`/`update_from_json` con `hora` (Time) y `_a_time` (HH:MM[:SS]).
+    - `api/database.py`: `_migrar_hora()` agrega columnas `hora` (Time, NOT NULL) a tablas existentes en SQLite.
+  - Endpoints:
+    - Nuevo `POST /consumoPersonal/guardar`: recibe `personalId`, `fecha`, `hora` y `egresos[]` (insumo/cantidad/unidad o ingresoMercaderiaId), crea el/los egreso(s) de mercadería (`ventaId` NULL = consumo personal) y el consumo en una sola transacción; valida stock (`api.stock.ingreso_con_stock_suficiente`) y hace rollback ante error.
+    - `POST /ingresoMercaderia/guardar`, `POST /venta/guardar` y `POST /pagos/guardar` ahora reciben y persisten `hora`.
+  - Frontend:
+    - Nueva page `pages/ConsumoPersonal.jsx`: alta de consumo personal (select de personal, fecha + hora con default hora actual, insumos como lista con cantidad y unidad de medida) que envía `egresos[]` a `POST /consumoPersonal/guardar`.
+    - `pages/Mercaderia.jsx`, `pages/Ventas.jsx`, `pages/Pagos.jsx` y `pages/Stock.jsx` actualizados para manejar `hora`.
